@@ -1,7 +1,7 @@
 import ctypes
-from ctypes import c_uint8, c_uint16, c_uint32, c_uint64
+from ctypes import Structure, Union, c_uint8, c_uint16, c_uint32, c_uint64
 
-class kvm_regs(ctypes.Structure):
+class kvm_regs(Structure):
     _fields_ = [
         ('rax',         c_uint64),
         ('rbx',         c_uint64),
@@ -48,7 +48,7 @@ class kvm_regs(ctypes.Structure):
 
 
 
-class kvm_segment(ctypes.Structure):
+class kvm_segment(Structure):
     _fields_ = [
         ('base',        c_uint64),
         ('limit',       c_uint32),
@@ -74,7 +74,7 @@ class kvm_segment(ctypes.Structure):
             ))
                 
 
-class kvm_dtable(ctypes.Structure):
+class kvm_dtable(Structure):
     _fields_ = [
         ('base',        c_uint64),
         ('limit',       c_uint16),
@@ -86,7 +86,7 @@ class kvm_dtable(ctypes.Structure):
 
 KVM_NR_INTERRUPTS = 256
 
-class kvm_sregs(ctypes.Structure):
+class kvm_sregs(Structure):
     _fields_ = [
         ('cs',          kvm_segment),
         ('ds',          kvm_segment),
@@ -126,3 +126,102 @@ class kvm_sregs(ctypes.Structure):
             '  EFER:        0x{:016X}'.format(self.efer),
             '  APIC Base:   0x{:016X}'.format(self.apic_base),
             ))
+
+def mkstruct(*fields):
+    # http://stackoverflow.com/questions/357997
+    return type('', (Structure,), {"_fields_": fields})
+
+class kvm_debug_exit_arch__x86(Structure):
+    _fields_ = [
+        ('exception',       c_uint32),
+        ('pad',             c_uint32),
+        ('pc',              c_uint64),
+        ('dr6',             c_uint64),
+        ('dr7',             c_uint64),
+    ]
+
+kvm_debug_exit_arch = kvm_debug_exit_arch__x86
+
+class kvm_run_exit_info_union(Union):
+    _fields_ = [
+        # KVM_EXIT_UNKNOWN
+        ('hw',  mkstruct(
+            ('hardware_exit_reason', c_uint64),
+            )),
+        # KVM_EXIT_FAIL_ENTRY
+        ('fail_entry', mkstruct(
+            ('hardware_entry_failure_reason', c_uint64),
+            )),
+        # KVM_EXIT_EXCEPTION
+        ('ex', mkstruct(
+            ('exception',   c_uint32),
+            ('error_code',  c_uint32),
+            )),
+        # KVM_EXIT_IO
+        ('io', mkstruct(
+            ('direction',   c_uint8),
+            ('size',        c_uint8),   # bytes
+            ('port',        c_uint16),
+            ('count',       c_uint32),
+            ('data_offset', c_uint64),  # relative to kvm_run start
+            )),
+        ('debug', mkstruct(
+            ('arch',        kvm_debug_exit_arch),
+            )),
+        # KVM_EXIT_MMIO
+        ('mmio', mkstruct(
+            ('phys_addr',   c_uint64),
+            ('data',        c_uint8 * 8),
+            ('len',         c_uint32),
+            ('is_write',    c_uint8),
+            )),
+        # KVM_EXIT_HYPERCALL
+        ('hypercall', mkstruct(
+            ('nr',          c_uint64),
+            ('args',        c_uint64 * 6),
+            ('ret',         c_uint64),
+            ('longmode',    c_uint32),
+            ('pad',         c_uint32),
+            )),
+        # KVM_EXIT_TPR_ACCESS
+        ('tpr_access', mkstruct(
+            ('rip',         c_uint64),
+            ('is_write',    c_uint32),
+            ('pad',         c_uint32),
+            )),
+
+        # (S390 stuff that I don't think I care about)
+
+        # Fix the size of the union.
+        ('padding',         c_uint8 * 256),
+    ]
+
+class kvm_shared_regs_union(Union):
+    pass
+
+class kvm_run(Structure):
+    _anonymous_ = ['_exit_info']
+    _fields_ = [
+        # in
+        ('request_interrupt_window',        c_uint8),
+        ('padding1',                        c_uint8 * 7),
+
+        # out
+        ('exit_reason',                     c_uint32),
+        ('ready_for_interrupt_injection',   c_uint8),
+        ('if_flag',                         c_uint8),
+        ('padding2',                        c_uint8 * 2),
+
+        #  in (pre_kvm_run), out (post_kvm_run)
+        ('cr8',                             c_uint64),
+        ('apic_base',                       c_uint64),
+
+        # (actually an anonymous union)
+        ('_exit_info',                      kvm_run_exit_info_union),
+
+        # shared registers between kvm and userspace.
+        ('kvm_valid_regs',                  c_uint64),
+        ('kvm_dirty_regs',                  c_uint64),
+        ('s',                               kvm_shared_regs_union),
+    ]
+
