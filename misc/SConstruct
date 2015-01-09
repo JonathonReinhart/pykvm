@@ -1,0 +1,2 @@
+env = Environment(CFLAGS = ['-Wall', '-Werror', '-g'])
+env.Program('dump_ioctls.c')
