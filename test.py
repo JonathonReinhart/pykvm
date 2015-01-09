@@ -26,6 +26,7 @@ def main():
     print str(regs)
 
     sregs = vcpu.get_sregs()
+    print 'Special Registers:'
     print sregs
 
 

@@ -59,12 +59,22 @@ class kvm_segment(ctypes.Structure):
         ('padding',     c_uint8),
     ]
 
+    def __str__(self):
+        return '\n'.join((
+            '    Base: 0x{:016X}  Limit: 0x{:08X}'.format(self.base, self.limit),
+            '    Selector: 0x{:04X}  Type: 0x{:02X}'.format(self.selector, self.type),
+            ))
+                
+
 class kvm_dtable(ctypes.Structure):
     _fields_ = [
         ('base',        c_uint64),
         ('limit',       c_uint16),
         ('padding',     c_uint16 * 3),
     ]
+
+    def __str__(self):
+        return '    Base: 0x{:016X}  Limit: 0x{:04X}'.format(self.base, self.limit)
 
 KVM_NR_INTERRUPTS = 256
 
@@ -92,6 +102,14 @@ class kvm_sregs(ctypes.Structure):
 
     def __str__(self):
         return '\n'.join((
+            '  CS:', str(self.cs),
+            '  DS:', str(self.ds),
+            '  ES:', str(self.es),
+            '  FS:', str(self.fs),
+            '  GS:', str(self.gs),
+            '  SS:', str(self.ss),
+            '  TR:', str(self.tr),
+            '  LDT:', str(self.ldt),
             '  CR0:         0x{:016X}'.format(self.cr0),
             '  CR2:         0x{:016X}'.format(self.cr2),
             '  CR3:         0x{:016X}'.format(self.cr3),
