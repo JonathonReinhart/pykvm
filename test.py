@@ -7,6 +7,8 @@ import pykvm
 def main():
     kvm = pykvm.Kvm()
 
+    print 'VCPU_MMAP_SIZE: 0x{:X}'.format(kvm._get_vcpu_mmap_size())
+
     for ext, sup in kvm.get_extensions():
         print '{:<40}: {}'.format(ext, sup)
 
