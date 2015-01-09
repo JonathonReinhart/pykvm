@@ -6,11 +6,23 @@ __all__ = ['Kvm']
 class KvmError(Exception):
     pass
 
+class KvmVm(object):
+    def __init__(self, kvm, fd, name):
+        self.kvm = kvm
+        self.fd = fd
+        self.name = name
+
+    def __str__(self):
+        return '<KvmVm: fd={} name={}>'.format(self.fd, self.name)
+
+
 class Kvm(object):
     KVM_API_VERSION = 12
 
     def __init__(self):
         self.fd = os.open('/dev/kvm', os.O_RDWR)
+        self.vms = []
+
         self._check_api_version()
 
     def _check_api_version(self):
@@ -21,6 +33,12 @@ class Kvm(object):
     def get_extensions(self):
         for name, cap in sorted(self._caps.iteritems()):
             yield (name, self._check_extension(cap))
+
+    def create_vm(self, name=''):
+        fd = self._create_vm()
+        vm = KvmVm(self, fd, name)
+        self.vms.append(vm)
+        return vm
 
 
     # IOCTLs
@@ -35,6 +53,9 @@ class Kvm(object):
 
     def _check_extension(self, cap):
         return ioctl(self.fd, Kvm.KVM_CHECK_EXTENSION, cap)
+
+    def _create_vm(self):
+        return ioctl(self.fd, Kvm.KVM_CREATE_VM)
 
 
     KVM_CAP_IRQCHIP = 0
