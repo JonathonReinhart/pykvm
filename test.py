@@ -19,6 +19,13 @@ def main():
     regs = vcpu.get_regs()
     print str(regs)
 
+    regs.rax = 0xDEADBEEF2B84F00D
+    vcpu.set_regs(regs)
+
+    regs = vcpu.get_regs()
+    print str(regs)
+
+
     return 0
 
 if __name__ == '__main__':

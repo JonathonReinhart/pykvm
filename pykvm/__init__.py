@@ -10,13 +10,14 @@ class KvmError(Exception):
 
 
 class KvmRegsx86(object):
-    struc = struct.Struct('<18I')
+    struc = struct.Struct('<18Q')
 
     @classmethod
     def get_empty(cls):
-        return bytearray(cls.struc.size)
+        return ' '*cls.struc.size
 
     def __init__(self, b):
+        if not b: b = self.get_empty()
         if len(b) != self.struc.size:
             raise KvmError('b must be exactly {} bytes'.format(self.struc.size))
         self.rax, self.rbx, self.rcx, self.rdx, \
@@ -25,6 +26,14 @@ class KvmRegsx86(object):
         self.r12, self.r13, self.r14, self.r15, \
         self.rip, self.rflags                   \
             = self.struc.unpack(b)
+
+    def _get_bytes(self):
+        return self.struc.pack(
+            self.rax, self.rbx, self.rcx, self.rdx, \
+            self.rsi, self.rdi, self.rsp, self.rbp, \
+            self.r8,  self.r9,  self.r10, self.r11, \
+            self.r12, self.r13, self.r14, self.r15, \
+            self.rip, self.rflags)
 
     def __str__(self):
         return pprint.pformat(vars(self), 4)
@@ -56,9 +65,14 @@ class KvmVcpu(object):
         ioctl(self.fd, KvmVcpu.KVM_RUN)
 
     def get_regs(self):
-        b = buffer(KvmRegsx86.get_empty())
-        ioctl(self.fd, KvmVcpu.KVM_GET_REGS, b)
+        b = KvmRegsx86.get_empty()
+        b = ioctl(self.fd, KvmVcpu.KVM_GET_REGS, b)
         return KvmRegsx86(b)
+
+    def set_regs(self, regs):
+        b = regs._get_bytes()
+        ioctl(self.fd, KvmVcpu.KVM_SET_REGS, b)
+
 
 
 
