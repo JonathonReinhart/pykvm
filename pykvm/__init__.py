@@ -79,6 +79,9 @@ class kvm_segment(ctypes.Structure):
         return '\n'.join((
             '    Base: 0x{:016X}  Limit: 0x{:08X}'.format(self.base, self.limit),
             '    Selector: 0x{:04X}  Type: 0x{:02X}'.format(self.selector, self.type),
+            '    Present: {}  DPL: {}  DB: {}  '.format(self.present, self.dpl, self.db),
+            '    S: {}  L: {}  G: {}  AVL: {}  Unusable: {}'.format(
+                self.s, self.l, self.g, self.avl, self.unusable),
             ))
                 
 
