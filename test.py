@@ -16,6 +16,9 @@ def main():
     vcpu = vm.add_vcpu(0)
     print vcpu
 
+    regs = vcpu.get_regs()
+    print str(regs)
+
     return 0
 
 if __name__ == '__main__':

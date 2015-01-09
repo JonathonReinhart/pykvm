@@ -15,5 +15,17 @@ int main(void)
     printf("VM IOCTLs:\n");
     pr(KVM_CREATE_VCPU);
 
+    printf("VCPU IOCTLs:\n");
+    pr(KVM_RUN);
+    pr(KVM_GET_REGS);
+    pr(KVM_SET_REGS);
+    pr(KVM_GET_SREGS);
+    pr(KVM_SET_SREGS);
+    pr(KVM_TRANSLATE);
+    pr(KVM_INTERRUPT);
+    pr(KVM_GET_MSRS);
+    pr(KVM_SET_MSRS);
+    pr(KVM_SET_CPUID);
+
     return 0;
 }

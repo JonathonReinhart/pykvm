@@ -1,10 +1,33 @@
 import os
+import struct
 from fcntl import fcntl, ioctl
+import pprint
 
 __all__ = ['Kvm']
 
 class KvmError(Exception):
     pass
+
+
+class KvmRegsx86(object):
+    struc = struct.Struct('<18I')
+
+    @classmethod
+    def get_empty(cls):
+        return bytearray(cls.struc.size)
+
+    def __init__(self, b):
+        if len(b) != self.struc.size:
+            raise KvmError('b must be exactly {} bytes'.format(self.struc.size))
+        self.rax, self.rbx, self.rcx, self.rdx, \
+        self.rsi, self.rdi, self.rsp, self.rbp, \
+        self.r8,  self.r9,  self.r10, self.r11, \
+        self.r12, self.r13, self.r14, self.r15, \
+        self.rip, self.rflags                   \
+            = self.struc.unpack(b)
+
+    def __str__(self):
+        return pprint.pformat(vars(self), 4)
 
 
 class KvmVcpu(object):
@@ -16,6 +39,28 @@ class KvmVcpu(object):
     def __str__(self):
         return '<KvmVcpu: vm={} fd={} cpuid={}>'.format(
                 self.vm.name, self.fd, self.cpuid)
+
+    # IOCTLs
+    KVM_RUN                        = 0x0000AE80
+    KVM_GET_REGS                   = 0x8090AE81
+    KVM_SET_REGS                   = 0x4090AE82
+    KVM_GET_SREGS                  = 0x8138AE83
+    KVM_SET_SREGS                  = 0x4138AE84
+    KVM_TRANSLATE                  = 0xC018AE85
+    KVM_INTERRUPT                  = 0x4004AE86
+    KVM_GET_MSRS                   = 0xC008AE88
+    KVM_SET_MSRS                   = 0x4008AE89
+    KVM_SET_CPUID                  = 0x4008AE8A
+
+    def _run(self):
+        ioctl(self.fd, KvmVcpu.KVM_RUN)
+
+    def get_regs(self):
+        b = buffer(KvmRegsx86.get_empty())
+        ioctl(self.fd, KvmVcpu.KVM_GET_REGS, b)
+        return KvmRegsx86(b)
+
+
 
 class KvmVm(object):
     def __init__(self, kvm, fd, name):
