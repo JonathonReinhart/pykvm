@@ -18,6 +18,11 @@ class Kvm(object):
         if ver != Kvm.KVM_API_VERSION:
             raise KvmError('KVM API version unsupported: {}'.format(ver))
 
+    def get_extensions(self):
+        for name, cap in sorted(self._caps.iteritems()):
+            yield (name, self._check_extension(cap))
+
+
     # IOCTLs
     KVM_GET_API_VERSION            = 0x0000AE00
     KVM_CREATE_VM                  = 0x0000AE01
