@@ -8,6 +8,8 @@ int main(void)
     pr(KVM_GET_API_VERSION);
     pr(KVM_CREATE_VM);
     pr(KVM_GET_MSR_INDEX_LIST);
+    pr(KVM_CHECK_EXTENSION);
+    pr(KVM_GET_VCPU_MMAP_SIZE);
 
     return 0;
 }
