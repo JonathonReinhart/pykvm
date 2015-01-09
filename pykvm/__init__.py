@@ -1,5 +1,7 @@
 import os
 import struct
+import ctypes
+from ctypes import c_uint8, c_uint16, c_uint32, c_uint64
 from fcntl import fcntl, ioctl
 import pprint
 
@@ -9,38 +11,52 @@ class KvmError(Exception):
     pass
 
 
-class Regsx86(object):
-    struc = struct.Struct('<18Q')
-
-    @classmethod
-    def get_empty(cls):
-        return ' '*cls.struc.size
-
-    def __init__(self, b):
-        if not b: b = self.get_empty()
-        if len(b) != self.struc.size:
-            raise KvmError('b must be exactly {} bytes'.format(self.struc.size))
-        self.rax, self.rbx, self.rcx, self.rdx, \
-        self.rsi, self.rdi, self.rsp, self.rbp, \
-        self.r8,  self.r9,  self.r10, self.r11, \
-        self.r12, self.r13, self.r14, self.r15, \
-        self.rip, self.rflags                   \
-            = self.struc.unpack(b)
-
-    def _get_bytes(self):
-        return self.struc.pack(
-            self.rax, self.rbx, self.rcx, self.rdx, \
-            self.rsi, self.rdi, self.rsp, self.rbp, \
-            self.r8,  self.r9,  self.r10, self.r11, \
-            self.r12, self.r13, self.r14, self.r15, \
-            self.rip, self.rflags)
+class kvm_regs(ctypes.Structure):
+    _fields_ = [
+        ('rax',         c_uint64),
+        ('rbx',         c_uint64),
+        ('rcx',         c_uint64),
+        ('rdx',         c_uint64),
+        ('rsi',         c_uint64),
+        ('rdi',         c_uint64),
+        ('rsp',         c_uint64),
+        ('rbp',         c_uint64),
+        ('r8',          c_uint64),
+        ('r9',          c_uint64),
+        ('r10',         c_uint64),
+        ('r11',         c_uint64),
+        ('r12',         c_uint64),
+        ('r13',         c_uint64),
+        ('r14',         c_uint64),
+        ('r15',         c_uint64),
+        ('rip',         c_uint64),
+        ('rflags',      c_uint64),
+    ]
 
     def __str__(self):
-        return pprint.pformat(vars(self), 4)
+        return '\n'.join((
+            '  RAX:     0x{:016X}'.format(self.rax),
+            '  RBX:     0x{:016X}'.format(self.rbx),
+            '  RCX:     0x{:016X}'.format(self.rcx),
+            '  RDX:     0x{:016X}'.format(self.rdx),
+            '  RSI:     0x{:016X}'.format(self.rsi),
+            '  RDI:     0x{:016X}'.format(self.rdi),
+            '  RSP:     0x{:016X}'.format(self.rsp),
+            '  RBP:     0x{:016X}'.format(self.rbp),
+            '  R8:      0x{:016X}'.format(self.r8),
+            '  R9:      0x{:016X}'.format(self.r9),
+            '  R10:     0x{:016X}'.format(self.r10),
+            '  R11:     0x{:016X}'.format(self.r11),
+            '  R12:     0x{:016X}'.format(self.r12),
+            '  R13:     0x{:016X}'.format(self.r13),
+            '  R14:     0x{:016X}'.format(self.r14),
+            '  R15:     0x{:016X}'.format(self.r15),
+            '  RIP:     0x{:016X}'.format(self.rip),
+            '  RFLAGS:  0x{:016X}'.format(self.rflags),
+            ))
 
 
-import ctypes # TODO
-from ctypes import c_uint8, c_uint16, c_uint32, c_uint64
+
 
 class kvm_segment(ctypes.Structure):
     _fields_ = [
@@ -145,18 +161,20 @@ class Vcpu(object):
         ioctl(self.fd, self.KVM_RUN)
 
     def get_regs(self):
-        b = Regsx86.get_empty()
-        b = ioctl(self.fd, self.KVM_GET_REGS, b)
-        return Regsx86(b)
+        r = kvm_regs()
+        ioctl(self.fd, self.KVM_GET_REGS, r)
+        return r
 
     def set_regs(self, regs):
-        b = regs._get_bytes()
-        ioctl(self.fd, self.KVM_SET_REGS, b)
+        ioctl(self.fd, self.KVM_SET_REGS, regs)
 
     def get_sregs(self):
         r = kvm_sregs()
         ioctl(self.fd, self.KVM_GET_SREGS, r)
         return r
+
+    def set_sregs(self, regs):
+        ioctl(self.fd, self.KVM_SET_SREGS, regs)
 
 
 

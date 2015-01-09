@@ -17,18 +17,26 @@ def main():
     print vcpu
 
     regs = vcpu.get_regs()
+    print 'Registers:'
     print str(regs)
 
     regs.rax = 0xDEADBEEF2B84F00D
     vcpu.set_regs(regs)
 
     regs = vcpu.get_regs()
+    print 'Registers (again):'
     print str(regs)
 
     sregs = vcpu.get_sregs()
     print 'Special Registers:'
     print sregs
 
+    sregs.cr0 |= ((1<<31) | (1<<30))
+    vcpu.set_sregs(sregs)
+
+    sregs = vcpu.get_sregs()
+    print 'Special Registers (again):'
+    print sregs
 
     return 0
 
