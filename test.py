@@ -13,6 +13,9 @@ def main():
     vm = kvm.create_vm('MyVM')
     print vm
 
+    vcpu = vm.add_vcpu(0)
+    print vcpu
+
     return 0
 
 if __name__ == '__main__':

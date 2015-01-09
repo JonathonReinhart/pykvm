@@ -6,14 +6,43 @@ __all__ = ['Kvm']
 class KvmError(Exception):
     pass
 
+
+class KvmVcpu(object):
+    def __init__(self, vm, fd, cpuid):
+        self.vm = vm
+        self.fd = fd
+        self.cpuid = cpuid
+
+    def __str__(self):
+        return '<KvmVcpu: vm={} fd={} cpuid={}>'.format(
+                self.vm.name, self.fd, self.cpuid)
+
 class KvmVm(object):
     def __init__(self, kvm, fd, name):
         self.kvm = kvm
         self.fd = fd
         self.name = name
+        self.vcpus = {}
 
     def __str__(self):
         return '<KvmVm: fd={} name={}>'.format(self.fd, self.name)
+
+    def add_vcpu(self, cpuid):
+        if cpuid in self.vcpus:
+            raise KvmError('vcpu with id {} already exists'.format(cpuid))
+        fd = self._create_vcpu(cpuid)
+        vcpu = KvmVcpu(self, fd, cpuid)
+        self.vcpus[cpuid] = vcpu
+        return vcpu
+
+    # IOCTLs
+    KVM_CREATE_VCPU                = 0x0000AE41
+
+    def _create_vcpu(self, cpuid):
+        return ioctl(self.fd, KvmVm.KVM_CREATE_VCPU, cpuid)
+
+
+
 
 
 class Kvm(object):
