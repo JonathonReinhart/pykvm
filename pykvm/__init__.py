@@ -3,13 +3,13 @@ import struct
 from fcntl import fcntl, ioctl
 import pprint
 
-__all__ = ['Kvm']
+__all__ = ['Kvm', 'KvmError']
 
 class KvmError(Exception):
     pass
 
 
-class KvmRegsx86(object):
+class Regsx86(object):
     struc = struct.Struct('<18Q')
 
     @classmethod
@@ -39,14 +39,14 @@ class KvmRegsx86(object):
         return pprint.pformat(vars(self), 4)
 
 
-class KvmVcpu(object):
+class Vcpu(object):
     def __init__(self, vm, fd, cpuid):
         self.vm = vm
         self.fd = fd
         self.cpuid = cpuid
 
     def __str__(self):
-        return '<KvmVcpu: vm={} fd={} cpuid={}>'.format(
+        return '<Vcpu: vm={} fd={} cpuid={}>'.format(
                 self.vm.name, self.fd, self.cpuid)
 
     # IOCTLs
@@ -62,21 +62,21 @@ class KvmVcpu(object):
     KVM_SET_CPUID                  = 0x4008AE8A
 
     def _run(self):
-        ioctl(self.fd, KvmVcpu.KVM_RUN)
+        ioctl(self.fd, self.KVM_RUN)
 
     def get_regs(self):
-        b = KvmRegsx86.get_empty()
-        b = ioctl(self.fd, KvmVcpu.KVM_GET_REGS, b)
-        return KvmRegsx86(b)
+        b = Regsx86.get_empty()
+        b = ioctl(self.fd, self.KVM_GET_REGS, b)
+        return Regsx86(b)
 
     def set_regs(self, regs):
         b = regs._get_bytes()
-        ioctl(self.fd, KvmVcpu.KVM_SET_REGS, b)
+        ioctl(self.fd, self.KVM_SET_REGS, b)
 
 
 
 
-class KvmVm(object):
+class Vm(object):
     def __init__(self, kvm, fd, name):
         self.kvm = kvm
         self.fd = fd
@@ -84,13 +84,13 @@ class KvmVm(object):
         self.vcpus = {}
 
     def __str__(self):
-        return '<KvmVm: fd={} name={}>'.format(self.fd, self.name)
+        return '<Vm: fd={} name={}>'.format(self.fd, self.name)
 
     def add_vcpu(self, cpuid):
         if cpuid in self.vcpus:
             raise KvmError('vcpu with id {} already exists'.format(cpuid))
         fd = self._create_vcpu(cpuid)
-        vcpu = KvmVcpu(self, fd, cpuid)
+        vcpu = Vcpu(self, fd, cpuid)
         self.vcpus[cpuid] = vcpu
         return vcpu
 
@@ -98,7 +98,7 @@ class KvmVm(object):
     KVM_CREATE_VCPU                = 0x0000AE41
 
     def _create_vcpu(self, cpuid):
-        return ioctl(self.fd, KvmVm.KVM_CREATE_VCPU, cpuid)
+        return ioctl(self.fd, self.KVM_CREATE_VCPU, cpuid)
 
 
 
@@ -124,7 +124,7 @@ class Kvm(object):
 
     def create_vm(self, name=''):
         fd = self._create_vm()
-        vm = KvmVm(self, fd, name)
+        vm = Vm(self, fd, name)
         self.vms.append(vm)
         return vm
 
