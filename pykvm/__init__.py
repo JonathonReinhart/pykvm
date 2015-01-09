@@ -39,6 +39,68 @@ class Regsx86(object):
         return pprint.pformat(vars(self), 4)
 
 
+import ctypes # TODO
+from ctypes import c_uint8, c_uint16, c_uint32, c_uint64
+
+class kvm_segment(ctypes.Structure):
+    _fields_ = [
+        ('base',        c_uint64),
+        ('limit',       c_uint32),
+        ('selector',    c_uint16),
+        ('type',        c_uint8),
+        ('present',     c_uint8),
+        ('dpl',         c_uint8),
+        ('db',          c_uint8),
+        ('s',           c_uint8),
+        ('l',           c_uint8),
+        ('g',           c_uint8),
+        ('avl',         c_uint8),
+        ('unusable',    c_uint8),
+        ('padding',     c_uint8),
+    ]
+
+class kvm_dtable(ctypes.Structure):
+    _fields_ = [
+        ('base',        c_uint64),
+        ('limit',       c_uint16),
+        ('padding',     c_uint16 * 3),
+    ]
+
+KVM_NR_INTERRUPTS = 256
+
+class kvm_sregs(ctypes.Structure):
+    _fields_ = [
+        ('cs',          kvm_segment),
+        ('ds',          kvm_segment),
+        ('es',          kvm_segment),
+        ('fs',          kvm_segment),
+        ('gs',          kvm_segment),
+        ('ss',          kvm_segment),
+        ('tr',          kvm_segment),
+        ('ldt',         kvm_segment),
+        ('gdt',         kvm_dtable),
+        ('idt',         kvm_dtable),
+        ('cr0',         c_uint64),
+        ('cr2',         c_uint64),
+        ('cr3',         c_uint64),
+        ('cr4',         c_uint64),
+        ('cr8',         c_uint64),
+        ('efer',        c_uint64),
+        ('apic_base',   c_uint64),
+        ('interrupt_bitmap', c_uint64 * ((KVM_NR_INTERRUPTS + 63) / 64) ),
+    ]
+
+    def __str__(self):
+        return '\n'.join((
+            '  CR0:         0x{:016X}'.format(self.cr0),
+            '  CR2:         0x{:016X}'.format(self.cr2),
+            '  CR3:         0x{:016X}'.format(self.cr3),
+            '  CR4:         0x{:016X}'.format(self.cr4),
+            '  CR8:         0x{:016X}'.format(self.cr8),
+            '  EFER:        0x{:016X}'.format(self.efer),
+            '  APIC Base:   0x{:016X}'.format(self.apic_base),
+            ))
+
 class Vcpu(object):
     def __init__(self, vm, fd, cpuid):
         self.vm = vm
@@ -73,6 +135,10 @@ class Vcpu(object):
         b = regs._get_bytes()
         ioctl(self.fd, self.KVM_SET_REGS, b)
 
+    def get_sregs(self):
+        r = kvm_sregs()
+        ioctl(self.fd, self.KVM_GET_SREGS, r)
+        return r
 
 
 

@@ -25,6 +25,9 @@ def main():
     regs = vcpu.get_regs()
     print str(regs)
 
+    sregs = vcpu.get_sregs()
+    print sregs
+
 
     return 0
 
