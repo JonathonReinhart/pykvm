@@ -2,7 +2,7 @@ import os
 import struct
 from fcntl import fcntl, ioctl
 import mmap
-import pprint
+import time 
 
 from kvmstructs import *
 
@@ -31,8 +31,13 @@ class Vcpu(object):
         sz = self.vm.kvm._get_vcpu_mmap_size()
         self.mmap = mmap.mmap(self.fd, sz, mmap.MAP_SHARED, (mmap.PROT_READ|mmap.PROT_WRITE))
         self.kvm_run = kvm_run.from_buffer(self.mmap)
-        import pdb; pdb.set_trace()
 
+    def run(self):
+        t0 = time.time()
+        self._run()
+        dt = time.time() - t0
+        print 'KVM_RUN ran for {} sec'.format(dt)
+        print 'Exit reason: {}'.format(self.kvm_run.exit_reason)
 
     # IOCTLs
     KVM_RUN                        = 0x0000AE80
@@ -45,6 +50,32 @@ class Vcpu(object):
     KVM_GET_MSRS                   = 0xC008AE88
     KVM_SET_MSRS                   = 0x4008AE89
     KVM_SET_CPUID                  = 0x4008AE8A
+
+    # Exit reasons
+    KVM_EXIT_UNKNOWN          = 0
+    KVM_EXIT_EXCEPTION        = 1
+    KVM_EXIT_IO               = 2
+    KVM_EXIT_HYPERCALL        = 3
+    KVM_EXIT_DEBUG            = 4
+    KVM_EXIT_HLT              = 5
+    KVM_EXIT_MMIO             = 6
+    KVM_EXIT_IRQ_WINDOW_OPEN  = 7
+    KVM_EXIT_SHUTDOWN         = 8
+    KVM_EXIT_FAIL_ENTRY       = 9
+    KVM_EXIT_INTR             = 10
+    KVM_EXIT_SET_TPR          = 11
+    KVM_EXIT_TPR_ACCESS       = 12
+    KVM_EXIT_S390_SIEIC       = 13
+    KVM_EXIT_S390_RESET       = 14
+    KVM_EXIT_DCR              = 15
+    KVM_EXIT_NMI              = 16
+    KVM_EXIT_INTERNAL_ERROR   = 17
+    KVM_EXIT_OSI              = 18
+    KVM_EXIT_PAPR_HCALL	      = 19
+    KVM_EXIT_S390_UCONTROL	  = 20
+    KVM_EXIT_WATCHDOG         = 21
+    KVM_EXIT_S390_TSCH        = 22
+    KVM_EXIT_EPR              = 23
 
     def _run(self):
         ioctl(self.fd, self.KVM_RUN)

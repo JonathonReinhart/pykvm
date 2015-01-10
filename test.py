@@ -40,6 +40,8 @@ def main():
     print 'Special Registers (again):'
     print sregs
 
+    vcpu.run()
+
     return 0
 
 if __name__ == '__main__':
