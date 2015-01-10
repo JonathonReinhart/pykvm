@@ -233,3 +233,16 @@ class kvm_run(Structure):
         ('s',                               kvm_shared_regs_union),
     ]
 
+
+
+class kvm_userspace_memory_region(Structure):
+    _fields_ = [
+        ('slot',            c_uint32),
+        ('flags',           c_uint32),
+        ('guest_phys_addr', c_uint64),
+        ('memory_size',     c_uint64),
+        ('userspace_addr',  c_uint64),
+    ]
+
+    KVM_MEM_LOG_DIRTY_PAGES = (1<<0)
+    KVM_MEM_READONLY        = (1<<1)

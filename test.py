@@ -1,23 +1,15 @@
 #!/usr/bin/env python
 import sys
 import os, os.path
+import mmap
 
 import pykvm
 
-def main():
-    kvm = pykvm.Kvm()
-
-    print 'VCPU_MMAP_SIZE: 0x{:X}'.format(kvm._get_vcpu_mmap_size())
-
+def dump_extensions(kvm):
     for ext, sup in kvm.get_extensions():
         print '{:<40}: {}'.format(ext, sup)
 
-    vm = kvm.create_vm('MyVM')
-    print vm
-
-    vcpu = vm.add_vcpu(0)
-    print vcpu
-
+def test_regs(vcpu):
     regs = vcpu.get_regs()
     print 'Registers:'
     print str(regs)
@@ -29,6 +21,7 @@ def main():
     print 'Registers (again):'
     print str(regs)
 
+def test_sregs(vcpu):
     sregs = vcpu.get_sregs()
     print 'Special Registers:'
     print sregs
@@ -40,8 +33,34 @@ def main():
     print 'Special Registers (again):'
     print sregs
 
+def add_tom(vm, size):
+    TOM = 4<<30
+    m = mmap.mmap(-1, size)
+    vm.add_mem_region((TOM-size), m)
+    return m
+
+def main():
+    kvm = pykvm.Kvm()
+
+    #dump_extensions()
+
+    vm = kvm.create_vm('MyVM')
+    print vm
+
+    vcpu = vm.add_vcpu(0)
+    print vcpu
+
+    #test_regs(vcpu)
+    #test_sregs(vcpu)
+
+    
+    # Add some memory covering the top of 4GB (reset vector)
+    tom = add_tom(vm, 64*1024)
+
+
     exit = vcpu.run()
     print exit
+
 
     return 0
 

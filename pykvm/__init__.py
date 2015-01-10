@@ -2,6 +2,7 @@ import os
 import struct
 from fcntl import fcntl, ioctl
 import mmap
+import ctypes
 import time 
 
 from kvmstructs import *
@@ -65,6 +66,13 @@ class KvmExitUnknown(KvmExit):
 
 class KvmExitException(KvmExit):
     code = KvmExit.KVM_EXIT_EXCEPTION
+
+    def __init__(self, vcpu):
+        self.exception = vcpu.kvm_run.ex.exception
+        self.error_code = vcpud.kvm_run.ex.error_code
+
+    def _getstr(self):
+        return 'Exception: 0x{:X}, error code: 0x{:X}'.format(self.exception, self.error_code)
 
 class KvmExitFailEntry(KvmExit):
     code = KvmExit.KVM_EXIT_FAIL_ENTRY
@@ -134,6 +142,28 @@ class Vcpu(object):
     def set_sregs(self, regs):
         ioctl(self.fd, self.KVM_SET_SREGS, regs)
 
+class Memslot(object):
+    def __init__(self, slotnum, guest_phys_addr, buffer_obj):
+        self.slotnum = slotnum
+        self.guest_phys_addr = guest_phys_addr
+        self.buffer_obj = buffer_obj
+
+    def __str__(self):
+        return '<Memslot #{}: 0x{:X}-0x{:X}>'.format(self.slotnum,
+                self.guest_phys_addr, self.guest_phys_addr + self.size)
+
+    @property
+    def size(self):
+        return len(self.buffer_obj)
+
+    @property
+    def userspace_addr(self):
+        return addressof_buffer(self.buffer_obj)
+
+
+def addressof_buffer(b):
+    # This seems like a hack, but I could find no better way.
+    return ctypes.addressof(ctypes.c_void_p.from_buffer(b))
 
 
 class Vm(object):
@@ -141,7 +171,11 @@ class Vm(object):
         self.kvm = kvm
         self.fd = fd
         self.name = name
+
         self.vcpus = {}
+
+        self.memslots = []
+
 
     def __str__(self):
         return '<Vm: fd={} name={}>'.format(self.fd, self.name)
@@ -154,11 +188,34 @@ class Vm(object):
         self.vcpus[cpuid] = vcpu
         return vcpu
 
+    def add_mem_region(self, guest_phys_addr, buffer_obj):
+        if len(self.memslots) >= self.kvm.max_memslots:
+            raise KvmError('Maximum number of memory slots ({}) already assigned.'\
+                    .format(self.kvm.max_memslots))
+        slotnum = len(self.memslots)
+        ms = Memslot(slotnum, guest_phys_addr, buffer_obj)
+        self.update_mem_region(ms)
+        self.memslots.append(ms)
+
+
+    def update_mem_region(self, ms):
+        flags = 0 # TODO
+        self._set_user_memory_region(ms.slotnum, flags, ms.guest_phys_addr, ms.size, ms.userspace_addr)
+
+
     # IOCTLs
     KVM_CREATE_VCPU                = 0x0000AE41
+    KVM_SET_USER_MEMORY_REGION     = 0x4020AE46
 
     def _create_vcpu(self, cpuid):
         return ioctl(self.fd, self.KVM_CREATE_VCPU, cpuid)
+
+    def _set_user_memory_region(self, slot, flags, guest_phys_addr, memory_size, userspace_addr):
+        r = kvm_userspace_memory_region(
+                slot = slot, flags = flags, guest_phys_addr = guest_phys_addr,
+                memory_size = memory_size, userspace_addr = userspace_addr)
+        ioctl(self.fd, self.KVM_SET_USER_MEMORY_REGION, r)
+
 
 
 
@@ -172,6 +229,7 @@ class Kvm(object):
         self.vms = []
 
         self._check_api_version()
+        self.max_memslots = self._check_extension(self.KVM_CAP_NR_MEMSLOTS)
 
     def _check_api_version(self):
         ver = self._get_api_version() 

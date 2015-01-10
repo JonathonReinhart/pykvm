@@ -14,6 +14,7 @@ int main(void)
 
     printf("VM IOCTLs:\n");
     pr(KVM_CREATE_VCPU);
+    pr(KVM_SET_USER_MEMORY_REGION);
 
     printf("VCPU IOCTLs:\n");
     pr(KVM_RUN);
