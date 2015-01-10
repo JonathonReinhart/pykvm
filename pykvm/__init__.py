@@ -83,6 +83,21 @@ class KvmExitFailEntry(KvmExit):
     def _getstr(self):
         return 'Entry Failure. Hardware reason: 0x{:X}'.format(self.hardware_entry_failure_reason)
 
+class KvmExitMmio(KvmExit):
+    code = KvmExit.KVM_EXIT_MMIO
+
+    def __init__(self, vcpu):
+        m = vcpu.kvm_run.mmio
+        self.phys_addr = m.phys_addr
+        self.data = m.data
+        self.len = m.len
+        self.is_write = bool(m.is_write)
+
+    def _getstr(self):
+        return 'MMIO: {} 0x{:X} ({} bytes)'.format(
+                'Write to' if self.is_write else 'Read from',
+                self.phys_addr, self.len)
+
 
 class Vcpu(object):
     def __init__(self, vm, fd, cpuid):
