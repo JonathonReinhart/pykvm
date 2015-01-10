@@ -196,8 +196,16 @@ class kvm_run_exit_info_union(Union):
         ('padding',         c_uint8 * 256),
     ]
 
+class kvm_sync_regs__x86(Structure):
+    _fields_ = [ ]
+
+kvm_sync_regs = kvm_sync_regs__x86
+
 class kvm_shared_regs_union(Union):
-    pass
+    _fields_ = [
+        ('regs',            kvm_sync_regs),
+        ('padding',         c_uint8 * 1024),
+    ]
 
 class kvm_run(Structure):
     _anonymous_ = ['_exit_info']
