@@ -206,7 +206,7 @@ class Kvm(object):
         return ioctl(self.fd, Kvm.KVM_CHECK_EXTENSION, cap)
 
     def _create_vm(self):
-        return ioctl(self.fd, Kvm.KVM_CREATE_VM)
+        return ioctl(self.fd, Kvm.KVM_CREATE_VM, 0)
 
 
     KVM_CAP_IRQCHIP = 0
