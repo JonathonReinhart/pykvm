@@ -37,7 +37,8 @@ def add_tom(vm, size):
     TOM = 4<<30
     m = mmap.mmap(-1, size)
     vm.add_mem_region((TOM-size), m)
-    return m
+    reset_vect_off = size - 0x10        # offset to guest 0xFFFFFFF0
+    return m, reset_vect_off
 
 def main():
     kvm = pykvm.Kvm()
@@ -55,7 +56,8 @@ def main():
 
     
     # Add some memory covering the top of 4GB (reset vector)
-    tom = add_tom(vm, 64*1024)
+    tom, rstoff = add_tom(vm, 64*1024)
+    tom[rstoff:rstoff+2] = '\xEB\xFE'       # jmp $
 
 
     exit = vcpu.run()

@@ -35,7 +35,10 @@ class Vcpu(object):
 
     def run(self):
         t0 = time.time()
-        self._run()
+        try:
+            self._run()
+        except KeyboardInterrupt:
+            pass
         dt = time.time() - t0
         return KvmExit.from_vcpu(self, dt)
 
