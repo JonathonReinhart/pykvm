@@ -1,6 +1,7 @@
 import os
 import struct
 from fcntl import fcntl, ioctl
+import mmap
 import pprint
 
 from kvmstructs import *
@@ -18,9 +19,20 @@ class Vcpu(object):
         self.fd = fd
         self.cpuid = cpuid
 
+        self._map_vcpu_area()
+
+
     def __str__(self):
         return '<Vcpu: vm={} fd={} cpuid={}>'.format(
                 self.vm.name, self.fd, self.cpuid)
+
+    def _map_vcpu_area(self):
+        # http://stackoverflow.com/a/3640617
+        sz = self.vm.kvm._get_vcpu_mmap_size()
+        self.mmap = mmap.mmap(self.fd, sz, mmap.MAP_SHARED, (mmap.PROT_READ|mmap.PROT_WRITE))
+        self.kvm_run = kvm_run.from_buffer(self.mmap)
+        import pdb; pdb.set_trace()
+
 
     # IOCTLs
     KVM_RUN                        = 0x0000AE80
