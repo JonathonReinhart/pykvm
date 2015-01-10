@@ -40,7 +40,8 @@ def main():
     print 'Special Registers (again):'
     print sregs
 
-    vcpu.run()
+    exit = vcpu.run()
+    print exit
 
     return 0
 
