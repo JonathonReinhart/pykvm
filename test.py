@@ -42,13 +42,16 @@ def map_file_to_guest(vm, filename, guest_phys_addr, size, readonly):
 
     with open(filename, 'rb') as f:
         data = f.read()
-
     assert(len(data) == size)
+    return map_to_guest(vm, guest_phys_addr, data, readonly)
 
-    m = mmap.mmap(-1, size)
+def map_to_guest(vm, guest_phys_addr, data, readonly):
+    # TODO: What alignment?
+    m = mmap.mmap(-1, len(data))
     m[:] = data
-
     vm.add_mem_region(guest_phys_addr, m, readonly)
+
+
 
 
 def handle_io(vcpu, exit):
@@ -58,9 +61,16 @@ def handle_io(vcpu, exit):
         exit.set_data(struct.pack('<I', 0xDEADBEEF))
     return True
 
+def handle_int_err(vcpu, exit):
+    print exit
+    print vcpu.get_regs()
+    print vcpu.get_sregs()
+
 exit_map = {
     KvmExitIo: handle_io,
     KvmExitHlt: lambda v,x: False,
+    KvmExitIntr: lambda v,x: False,
+    KvmExitInternalError: handle_int_err,
 }
 
 def dispatch_exit(vcpu, exit):
@@ -73,6 +83,7 @@ def dispatch_exit(vcpu, exit):
 
 
 def main():
+    firmware_filename = sys.argv[1]
     kvm = pykvm.Kvm()
 
     #dump_extensions()
@@ -86,9 +97,15 @@ def main():
     #test_regs(vcpu)
     #test_sregs(vcpu)
 
-    # Add some memory covering the top of 4GB (reset vector)
-    sz = 64 << 10
-    map_file_to_guest(vm, 'misc/entry_code.bin', 0xFFFFFFFF - sz + 1, sz, True)
+    # 1 MB RAM
+    m = mmap.mmap(-1, 1<<20)
+    vm.add_mem_region(0, m)
+
+    # Firmware
+    with open(firmware_filename, 'rb') as f:
+        fw = f.read()
+    map_to_guest(vm, 0xFFFFFFFF - len(fw) + 1, fw, True)
+
 
     while True:
         exit = vcpu.run()
