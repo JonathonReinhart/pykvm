@@ -33,12 +33,21 @@ def test_sregs(vcpu):
     print 'Special Registers (again):'
     print sregs
 
-def add_tom(vm, size):
-    TOM = 4<<30
+
+def map_file_to_guest(vm, filename, guest_phys_addr, size):
+    # Unfortunately, ctypes doesn't support readonly memmaps, so we can't
+    # really get the address of the memmap.
+
+    with open(filename, 'rb') as f:
+        data = f.read()
+
+    assert(len(data) == size)
+
     m = mmap.mmap(-1, size)
-    vm.add_mem_region((TOM-size), m)
-    reset_vect_off = size - 0x10        # offset to guest 0xFFFFFFF0
-    return m, reset_vect_off
+    m[:] = data
+
+    vm.add_mem_region(guest_phys_addr, m)
+
 
 def main():
     kvm = pykvm.Kvm()
@@ -54,14 +63,13 @@ def main():
     #test_regs(vcpu)
     #test_sregs(vcpu)
 
-    
     # Add some memory covering the top of 4GB (reset vector)
-    tom, rstoff = add_tom(vm, 64*1024)
-    tom[rstoff:rstoff+2] = '\xEB\xFE'       # jmp $
-
+    sz = 64 << 10
+    map_file_to_guest(vm, 'code.bin', 0xFFFFFFFF - sz + 1, sz)
 
     exit = vcpu.run()
     print exit
+    print vcpu.get_regs()
 
 
     return 0
