@@ -102,6 +102,14 @@ class KvmExitIo(KvmExit):
         ctypes.memmove(self.data, data, len(data))
 
 
+class KvmExitHlt(KvmExit):
+    code = KvmExit.KVM_EXIT_HLT
+
+    def __init__(self, vcpu):
+        pass
+
+    def _getstr(self):
+        return 'Halted.'
 
 class KvmExitFailEntry(KvmExit):
     code = KvmExit.KVM_EXIT_FAIL_ENTRY

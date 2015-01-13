@@ -6,10 +6,7 @@ start:
     in  eax, dx
     out dx, eax
 
-    xor eax, eax
-    xor edx, edx
-    idiv eax
-
+    hlt
     jmp $
 
 

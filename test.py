@@ -56,16 +56,18 @@ def handle_io(vcpu, exit):
         pass
     else:
         exit.set_data(struct.pack('<I', 0xDEADBEEF))
+    return True
 
 exit_map = {
     KvmExitIo: handle_io,
+    KvmExitHlt: lambda v,x: False,
 }
 
 def dispatch_exit(vcpu, exit):
     handler = exit_map.get(type(exit))
     if not handler:
         raise Exception('No handler for {}'.format(type(exit)))
-    handler(vcpu, exit)
+    return handler(vcpu, exit)
 
 
 
@@ -93,7 +95,8 @@ def main():
         print exit
         print vcpu.get_regs()
 
-        dispatch_exit(vcpu, exit)
+        if not dispatch_exit(vcpu, exit):
+            break
 
 
 
