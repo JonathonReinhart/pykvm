@@ -1,2 +1,7 @@
-env = Environment(CFLAGS = ['-Wall', '-Werror', '-g'])
+env = Environment(
+    tools = ['default', 'nasm'],
+    CFLAGS = ['-Wall', '-Werror', '-g'])
+
 env.Program('dump_ioctls.c')
+
+env.Object('entry_code.bin', 'entry_code.s')
