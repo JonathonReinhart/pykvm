@@ -72,7 +72,7 @@ class kvm_segment(Structure):
             '    Present: {}  DPL: {}  DB: {}  S: {}  L: {}  G: {}  AVL: {}  Unusable: {}'.format(
                 self.present, self.dpl, self.db, self.s, self.l, self.g, self.avl, self.unusable),
             ))
-                
+
 
 class kvm_dtable(Structure):
     _fields_ = [
@@ -189,12 +189,22 @@ class kvm_run_exit_info_union(Union):
             ('is_write',    c_uint32),
             ('pad',         c_uint32),
             )),
-
-        # (S390 stuff that I don't think I care about)
+        # KVM_EXIT_INTERNAL_ERROR
+        ('internal', mkstruct(
+            ('suberror',    c_uint32),
+            ('ndata',       c_uint32),
+            ('data',        c_uint64 * 16),
+            )),
+        # KVM_EXIT_SYSTEM_EVENT
+        ('system_event', mkstruct(
+            ('type',        c_uint32),
+            ('flags',       c_uint64),
+            )),
 
         # Fix the size of the union.
         ('padding',         c_uint8 * 256),
     ]
+
 
 class kvm_sync_regs__x86(Structure):
     _fields_ = [ ]
