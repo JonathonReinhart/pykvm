@@ -76,14 +76,16 @@ class Vcpu(object):
         ioctl(self.fd, self.KVM_SET_SREGS, regs)
 
 class Memslot(object):
-    def __init__(self, slotnum, guest_phys_addr, buffer_obj):
+    def __init__(self, slotnum, guest_phys_addr, buffer_obj, readonly=False):
         self.slotnum = slotnum
         self.guest_phys_addr = guest_phys_addr
         self.buffer_obj = buffer_obj
+        self.readonly = readonly
 
     def __str__(self):
-        return '<Memslot #{}: 0x{:X}-0x{:X}>'.format(self.slotnum,
-                self.guest_phys_addr, self.guest_phys_addr + self.size)
+        return '<Memslot #{}: 0x{:X}-0x{:X}{}>'.format(self.slotnum,
+                self.guest_phys_addr, self.guest_phys_addr + self.size,
+                ' Readonly ' if self.readonly else '',)
 
     @property
     def size(self):
@@ -121,18 +123,20 @@ class Vm(object):
         self.vcpus[cpuid] = vcpu
         return vcpu
 
-    def add_mem_region(self, guest_phys_addr, buffer_obj):
+    def add_mem_region(self, guest_phys_addr, buffer_obj, readonly=False):
         if len(self.memslots) >= self.kvm.max_memslots:
             raise KvmError('Maximum number of memory slots ({}) already assigned.'\
                     .format(self.kvm.max_memslots))
         slotnum = len(self.memslots)
-        ms = Memslot(slotnum, guest_phys_addr, buffer_obj)
+        ms = Memslot(slotnum, guest_phys_addr, buffer_obj, readonly)
         self.update_mem_region(ms)
         self.memslots.append(ms)
 
 
     def update_mem_region(self, ms):
-        flags = 0 # TODO
+        flags = 0
+        if ms.readonly:
+            flags |= kvm_userspace_memory_region.KVM_MEM_READONLY 
         self._set_user_memory_region(ms.slotnum, flags, ms.guest_phys_addr, ms.size, ms.userspace_addr)
 
 

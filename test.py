@@ -34,7 +34,7 @@ def test_sregs(vcpu):
     print sregs
 
 
-def map_file_to_guest(vm, filename, guest_phys_addr, size):
+def map_file_to_guest(vm, filename, guest_phys_addr, size, readonly):
     # Unfortunately, ctypes doesn't support readonly memmaps, so we can't
     # really get the address of the memmap.
 
@@ -46,7 +46,7 @@ def map_file_to_guest(vm, filename, guest_phys_addr, size):
     m = mmap.mmap(-1, size)
     m[:] = data
 
-    vm.add_mem_region(guest_phys_addr, m)
+    vm.add_mem_region(guest_phys_addr, m, readonly)
 
 
 def main():
@@ -65,7 +65,7 @@ def main():
 
     # Add some memory covering the top of 4GB (reset vector)
     sz = 64 << 10
-    map_file_to_guest(vm, 'code.bin', 0xFFFFFFFF - sz + 1, sz)
+    map_file_to_guest(vm, 'code.bin', 0xFFFFFFFF - sz + 1, sz, True)
 
     exit = vcpu.run()
     print exit
