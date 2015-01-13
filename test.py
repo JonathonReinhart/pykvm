@@ -2,8 +2,10 @@
 import sys
 import os, os.path
 import mmap
+import struct
 
 import pykvm
+from pykvm.exitreason import *
 
 def dump_extensions(kvm):
     for ext, sup in kvm.get_extensions():
@@ -49,6 +51,27 @@ def map_file_to_guest(vm, filename, guest_phys_addr, size, readonly):
     vm.add_mem_region(guest_phys_addr, m, readonly)
 
 
+def handle_io(vcpu, exit):
+    print exit
+
+    if exit.is_write:
+        pass
+    else:
+        exit.set_data(struct.pack('<I', 0xDEADBEEF))
+
+exit_map = {
+    KvmExitIo: handle_io,
+}
+
+def dispatch_exit(vcpu, exit):
+    handler = exit_map.get(type(exit))
+    if not handler:
+        raise Exception('No handler for {}'.format(type(exit)))
+    handler(vcpu, exit)
+
+
+
+
 def main():
     kvm = pykvm.Kvm()
 
@@ -65,11 +88,17 @@ def main():
 
     # Add some memory covering the top of 4GB (reset vector)
     sz = 64 << 10
-    map_file_to_guest(vm, 'code.bin', 0xFFFFFFFF - sz + 1, sz, True)
+    map_file_to_guest(vm, 'misc/entry_code.bin', 0xFFFFFFFF - sz + 1, sz, True)
 
-    exit = vcpu.run()
-    print exit
-    print vcpu.get_regs()
+    while True:
+        exit = vcpu.run()
+        print exit
+        print vcpu.get_regs()
+
+        dispatch_exit(vcpu, exit)
+
+
+
 
 
     return 0
