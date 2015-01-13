@@ -140,13 +140,19 @@ class KvmExitInternalError(KvmExit):
     code = KvmExit.KVM_EXIT_INTERNAL_ERROR
 
     def __init__(self, vcpu):
-        self.suberror = vcpu.kvm_run.internal.suberror
+        i = vcpu.kvm_run.internal
+        self.suberror = i.suberror
+        self.data = i.data[:i.ndata]
 
     def _getstr(self):
         suberr_str = self.err_map.get(self.suberror)
         if not suberr_str:
             suberr_str = '0x{:X}'.format(self.suberror)
-        return 'Internal Error: {}'.format(suberr_str)
+        s = 'Internal Error: {}'.format(suberr_str)
+        s += '\nData:'
+        for d in self.data:
+            s += '\n   0x{:X}'.format(d)
+        return s
 
     KVM_INTERNAL_ERROR_EMULATION    = 1
     KVM_INTERNAL_ERROR_SIMUL_EX     = 2
