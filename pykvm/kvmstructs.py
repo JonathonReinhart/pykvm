@@ -233,6 +233,9 @@ class kvm_run(Structure):
         ('s',                               kvm_shared_regs_union),
     ]
 
+    KVM_EXIT_IO_IN  = 0
+    KVM_EXIT_IO_OUT = 1
+
 
 
 class kvm_userspace_memory_region(Structure):

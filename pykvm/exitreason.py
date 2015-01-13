@@ -1,3 +1,4 @@
+from kvmstructs import *
 
 class KvmExit(object):
     # Exit reasons
@@ -58,6 +59,49 @@ class KvmExitException(KvmExit):
 
     def _getstr(self):
         return 'Exception: 0x{:X}, error code: 0x{:X}'.format(self.exception, self.error_code)
+
+class KvmExitIo(KvmExit):
+    code = KvmExit.KVM_EXIT_IO
+
+    def __init__(self, vcpu):
+        self.vcpu = vcpu
+
+        io = vcpu.kvm_run.io
+        self.is_write = io.direction == kvm_run.KVM_EXIT_IO_OUT
+        self.size = io.size
+        self.port = io.port
+        self.count = io.count
+
+        # TODO: Should the accessors deal with integers or strings?
+        self.data = (c_uint8 * self.size).from_address(
+                ctypes.addressof(vcpu.kvm_run) + io.data_offset)
+
+    def _getstr(self):
+        s = 'IO: {} port 0x{:X} ({} bytes)'.format(
+                'Write to' if self.is_write else 'Read from',
+                self.port, self.size)
+        if self.is_write:
+            s += '  Data: ' + self.get_data().encode('hex')
+        return s
+
+    def get_data(self):
+        if not self.is_write:
+            # TODO: Use KvmException
+            raise Exception('Cannot get data from IO read')
+        return str(bytearray(self.data))
+
+
+
+    def set_data(self, data):
+        if self.is_write:
+            #TODO
+            raise Exception('Cannot set data for IO write')
+        if len(data) != self.size:
+            # TODO
+            raise Exception('data must be exactly {} bytes'.format(self.size))
+        ctypes.memmove(self.data, data, len(data))
+
+
 
 class KvmExitFailEntry(KvmExit):
     code = KvmExit.KVM_EXIT_FAIL_ENTRY
