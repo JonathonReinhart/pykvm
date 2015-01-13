@@ -136,3 +136,24 @@ class KvmExitIntr(KvmExit):
     def _getstr(self):
         return 'Interrupted by signal.'
 
+class KvmExitInternalError(KvmExit):
+    code = KvmExit.KVM_EXIT_INTERNAL_ERROR
+
+    def __init__(self, vcpu):
+        self.suberror = vcpu.kvm_run.internal.suberror
+
+    def _getstr(self):
+        suberr_str = self.err_map.get(self.suberror)
+        if not suberr_str:
+            suberr_str = '0x{:X}'.format(self.suberror)
+        return 'Internal Error: {}'.format(suberr_str)
+
+    KVM_INTERNAL_ERROR_EMULATION    = 1
+    KVM_INTERNAL_ERROR_SIMUL_EX     = 2
+    KVM_INTERNAL_ERROR_DELIVERY_EV  = 3
+
+    err_map = {
+        KVM_INTERNAL_ERROR_EMULATION:   'Instruction emulation failed',
+        KVM_INTERNAL_ERROR_SIMUL_EX:    'Unexpected simultaneous exceptions encountered',
+        KVM_INTERNAL_ERROR_DELIVERY_EV: 'Unexpected vm-exit due to delivery event encountered',
+    }

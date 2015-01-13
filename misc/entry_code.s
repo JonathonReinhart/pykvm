@@ -5,6 +5,11 @@ start:
     mov dx, 0xDEAD
     in  eax, dx
     out dx, eax
+
+    xor eax, eax
+    xor edx, edx
+    idiv eax
+
     jmp $
 
 

@@ -52,8 +52,6 @@ def map_file_to_guest(vm, filename, guest_phys_addr, size, readonly):
 
 
 def handle_io(vcpu, exit):
-    print exit
-
     if exit.is_write:
         pass
     else:
