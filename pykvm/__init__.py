@@ -42,6 +42,11 @@ class Vcpu(object):
         dt = time.time() - t0
         return KvmExit.from_vcpu(self, dt)
 
+    def enable_single_step(self):
+        dbg = kvm_guest_debug()
+        dbg.control = self.KVM_GUESTDBG_ENABLE | self.KVM_GUESTDBG_SINGLESTEP 
+        self._set_guest_debug(dbg)
+
 
     # IOCTLs
     KVM_RUN                        = 0x0000AE80
@@ -54,6 +59,11 @@ class Vcpu(object):
     KVM_GET_MSRS                   = 0xC008AE88
     KVM_SET_MSRS                   = 0x4008AE89
     KVM_SET_CPUID                  = 0x4008AE8A
+    KVM_SET_GUEST_DEBUG            = 0x4048AE9B
+
+    # SET_GUEST_DEBUG
+    KVM_GUESTDBG_ENABLE            = 0x00000001
+    KVM_GUESTDBG_SINGLESTEP        = 0x00000002
 
 
     def _run(self):
@@ -74,6 +84,11 @@ class Vcpu(object):
 
     def set_sregs(self, regs):
         ioctl(self.fd, self.KVM_SET_SREGS, regs)
+
+    def _set_guest_debug(self, dbg):
+        ioctl(self.fd, self.KVM_SET_GUEST_DEBUG, dbg)
+
+
 
 class Memslot(object):
     def __init__(self, slotnum, guest_phys_addr, buffer_obj, readonly=False):

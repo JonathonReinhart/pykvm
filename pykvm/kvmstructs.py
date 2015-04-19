@@ -259,3 +259,18 @@ class kvm_userspace_memory_region(Structure):
 
     KVM_MEM_LOG_DIRTY_PAGES = (1<<0)
     KVM_MEM_READONLY        = (1<<1)
+
+
+class kvm_guest_debug_arch_x86(Structure):
+    _fields_ = [
+        ('debugreg',        c_uint64 * 8),
+    ]
+
+kvm_guest_debug_arch = kvm_guest_debug_arch_x86
+
+class kvm_guest_debug(Structure):
+    _fields_ = [
+        ('control',         c_uint32),
+        ('pad',             c_uint32),
+        ('arch',            kvm_guest_debug_arch),
+    ]

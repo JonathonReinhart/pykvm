@@ -107,6 +107,9 @@ def main():
     map_to_guest(vm, 0xFFFFFFFF - len(fw) + 1, fw, True)
 
 
+    vcpu.enable_single_step()
+
+
     while True:
         exit = vcpu.run()
         print exit

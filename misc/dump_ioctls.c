@@ -27,6 +27,7 @@ int main(void)
     pr(KVM_GET_MSRS);
     pr(KVM_SET_MSRS);
     pr(KVM_SET_CPUID);
+    pr(KVM_SET_GUEST_DEBUG);
 
     return 0;
 }
