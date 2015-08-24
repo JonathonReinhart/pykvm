@@ -1,4 +1,9 @@
 #!/usr/bin/env python
+
+# pykvm
+# https://github.com/JonathonReinhart/pykvm
+# (C) 2015 Jonathon Reinhart
+
 import sys
 import os, os.path
 import mmap

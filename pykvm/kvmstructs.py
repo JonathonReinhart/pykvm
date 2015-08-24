@@ -1,3 +1,7 @@
+# pykvm
+# https://github.com/JonathonReinhart/pykvm
+# (C) 2015 Jonathon Reinhart
+
 import ctypes
 from ctypes import Structure, Union, c_uint8, c_uint16, c_uint32, c_uint64
 

@@ -1,3 +1,7 @@
+# pykvm
+# https://github.com/JonathonReinhart/pykvm
+# (C) 2015 Jonathon Reinhart
+
 from kvmstructs import *
 
 class KvmExit(object):

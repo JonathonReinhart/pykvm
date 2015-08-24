@@ -1,3 +1,7 @@
+# pykvm
+# https://github.com/JonathonReinhart/pykvm
+# (C) 2015 Jonathon Reinhart
+
 import os
 import struct
 from fcntl import fcntl, ioctl
