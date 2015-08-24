@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <linux/kvm.h>
 
-#define pr(x)   printf("  %-30s = 0x%08X\n", #x, x)
+#define pr(x)   printf("  %-30s = 0x%08lX\n", #x, (long unsigned int)x)
 
 int main(void)
 {
