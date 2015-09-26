@@ -93,6 +93,16 @@ def dispatch_exit(vcpu, exit):
 
 
 
+def test_enable_single_step(vcpu):
+    before = str(vcpu.get_regs()) + str(vcpu.get_sregs()) + str(vcpu.get_debugregs())
+    # Ensure that calling this function doesn't any of our registers...
+    # Trying to understand why calling this causes an entry failure with invalid state,
+    # when we aren't even changing anything in the vcpu state!
+    vcpu.enable_single_step()
+    after = str(vcpu.get_regs()) + str(vcpu.get_sregs()) + str(vcpu.get_debugregs())
+    assert(before == after)
+
+
 
 def main():
     firmware_filename = sys.argv[1]
@@ -116,7 +126,10 @@ def main():
 
     map_firmware(vm, firmware_filename)
 
-    vcpu.enable_single_step()
+
+    # Causes failure
+    #test_enable_single_step(vcpu)
+    #vcpu.enable_single_step()
 
 
     while True:
