@@ -58,6 +58,8 @@ class Vcpu(object):
     KVM_SET_REGS                   = 0x4090AE82
     KVM_GET_SREGS                  = 0x8138AE83
     KVM_SET_SREGS                  = 0x4138AE84
+    KVM_GET_DEBUGREGS              = 0x8080AEA1
+    KVM_SET_DEBUGREGS              = 0x4080AEA2
     KVM_TRANSLATE                  = 0xC018AE85
     KVM_INTERRUPT                  = 0x4004AE86
     KVM_GET_MSRS                   = 0xC008AE88
@@ -88,6 +90,14 @@ class Vcpu(object):
 
     def set_sregs(self, regs):
         ioctl(self.fd, self.KVM_SET_SREGS, regs)
+
+    def get_debugregs(self):
+        r = kvm_debugregs()
+        ioctl(self.fd, self.KVM_GET_DEBUGREGS, r)
+        return r
+
+    def set_debugregs(self, regs):
+        ioctl(self.fd, self.KVM_SET_DEBUGREGS, regs)
 
     def _set_guest_debug(self, dbg):
         ioctl(self.fd, self.KVM_SET_GUEST_DEBUG, dbg)

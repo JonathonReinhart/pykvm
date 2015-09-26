@@ -131,6 +131,28 @@ class kvm_sregs(Structure):
             '  APIC Base:   0x{:016X}'.format(self.apic_base),
             ))
 
+class kvm_debugregs(Structure):
+    _fields_ = [
+        ('db',          c_uint64 * 4),
+        ('dr6',         c_uint64),
+        ('dr7',         c_uint64),
+        ('flags',       c_uint64),
+        ('reserved',    c_uint64 * 9),
+    ]
+
+    def __str__(self):
+        return '\n'.join((
+            '  DB[0]:  0x{:016X}'.format(self.db[0]),
+            '  DB[1]:  0x{:016X}'.format(self.db[1]),
+            '  DB[2]:  0x{:016X}'.format(self.db[2]),
+            '  DB[3]:  0x{:016X}'.format(self.db[3]),
+            '  DR6:    0x{:016X}'.format(self.dr6),
+            '  DR7:    0x{:016X}'.format(self.dr7),
+            '  FLAGS:  0x{:016X}'.format(self.flags),
+            ))
+
+
+
 def mkstruct(*fields):
     # http://stackoverflow.com/questions/357997
     return type('', (Structure,), {"_fields_": fields})

@@ -22,6 +22,8 @@ int main(void)
     pr(KVM_SET_REGS);
     pr(KVM_GET_SREGS);
     pr(KVM_SET_SREGS);
+    pr(KVM_GET_DEBUGREGS);
+    pr(KVM_SET_DEBUGREGS);
     pr(KVM_TRANSLATE);
     pr(KVM_INTERRUPT);
     pr(KVM_GET_MSRS);
