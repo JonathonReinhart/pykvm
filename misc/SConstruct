@@ -4,4 +4,5 @@ env = Environment(
 
 env.Program('dump_ioctls.c')
 
-env.Object('entry_code.bin', 'entry_code.s')
+env.Object('entry_code16.bin', 'entry_code16.s')
+env.Object('entry_code32.bin', 'entry_code32.s')
