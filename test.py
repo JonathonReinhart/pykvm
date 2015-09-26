@@ -56,6 +56,13 @@ def map_to_guest(vm, guest_phys_addr, data, readonly):
     m[:] = data
     vm.add_mem_region(guest_phys_addr, m, readonly)
 
+def map_firmware(vm, filename):
+    with open(filename, 'rb') as f:
+        fw = f.read()
+    base = 0xFFFFFFFF - len(fw) + 1
+    assert(len(fw) & 0xFFF == 0)
+    print 'Mapping {0} kB firmware @ 0x{1:X}'.format(len(fw)/1024, base)
+    map_to_guest(vm, base, fw, True)
 
 
 
@@ -106,11 +113,8 @@ def main():
     m = mmap.mmap(-1, 1<<20)
     vm.add_mem_region(0, m)
 
-    # Firmware
-    with open(firmware_filename, 'rb') as f:
-        fw = f.read()
-    map_to_guest(vm, 0xFFFFFFFF - len(fw) + 1, fw, True)
 
+    map_firmware(vm, firmware_filename)
 
     vcpu.enable_single_step()
 
